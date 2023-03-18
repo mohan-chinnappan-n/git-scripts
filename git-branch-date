@@ -1,0 +1,4 @@
+#!/bin/bash
+# git config --global alias.branch-date '!/Users/mchinnappan/git-scripts/git-branch-date'
+git for-each-ref --sort='-committerdate' --format='%(committerdate) -> %(refname)' refs/heads
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+# git config --global alias.logs-csv '!/Users/mchinnappan/git-scripts/git-logs-csv'
+output=/tmp/_gitlog_.csv
+echo "commit id,author,date,comment,changed files,lines added,lines deleted" > ${output} 
+since=${1:-2023-01-01}
+echo "=== Getting logs for since:${since} ==="
+git log --since="${since}"   --source --date=local --branches --pretty="%x40%h%x2C%an%x2C%ad%x2C%x22%s%x22%x2C%S-->" --shortstat | tr "\n" " " | tr "@" "\n" >> ${output} 
+pbcopy < ${output} 
+echo "=== `wc -l ${output}` lines.  Opening in the your web browser to view the logs ==="
+open "https://mohan-chinnappan-n5.github.io/viz/datatable/dt.html?c=csv"
