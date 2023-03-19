@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Script for pipeline
+# mchinnappan
+# Bails out if count of P1,P2 and P3 are not zero
+# -----------------------------------------
+# if you are running manually: run this when you are one folder above the classes folder of your sfdx project 
+
+# alias for git, setup:
+# git config --global alias.pmd-scan '!/Users/mchinnappan/git-scripts/git-pmd'
+## then you can run 
+# git pmd-scan
+
+#----- configure the following to meet your needs ----
+RULESET=~/.pmd/apex_ruleset.xml
+MSG="Number of P1,P2 and P3 issues are"
+CODE=${1:-./classes}
+THRESHOLD=${2:-3}
+OUTHTMLFILE="/tmp/results.html"
+XSLTURL="https://raw.githubusercontent.com/pmd/pmd/master/pmd-core/etc/xslt/html-report-v2.xslt"
+XSLT="/tmp/html-report-v2.xslt"
+
+# get the xslt from the pmd site
+curl ${XSLTURL} -o ${XSLT}
+
+#------------------------------------
+PREFIX="==="
+# Run the pmd
+echo "$PREFIX Running PMD scan on ${CODE} ${PREFIX} and THRESHOLD: ${THRESHOLD} ..."
+echo "Going to run: pmd-run.sh pmd -R  $RULESET -d $CODE  -f csv > /tmp/results.csv ..."
+pmd-run.sh pmd -R  $RULESET -d $CODE  -f csv > /tmp/results.csv
+pmd-run.sh pmd -R  $RULESET -d $CODE  -f xslt -property xsltFilename=${XSLT}  > ${OUTHTMLFILE}
+open  ${OUTHTMLFILE}
+
+
+
+# query the results using SQL
+echo "SELECT COUNT(*) AS CNT   FROM CSV(\"/tmp/results.csv\", {headers:true}) WHERE Priority < $THRESHOLD" > /tmp/q.sql
+cat /tmp/q.sql
+sfdx mohanc:data:query:sql -q /tmp/q.sql  > /tmp/out.json
+
+# check for the errors
+echo "$PREFIX Checking for PMD  violations ... $PREFIX"
+nerrors=`sfdx mohanc:data:jq -f  '.[].CNT'  -i /tmp/out.json`
+echo "nerrors: $nerrors"
+
+if [ "$nerrors" != 0 ]
+then
+  pbcopy < /tmp/results.csv;
+  echo "=== `wc -l /tmp/results.csv` lines.  Opening in the your web browser to view the logs ==="
+  open "https://mohan-chinnappan-n5.github.io/viz/datatable/dt.html?c=csv"
+
+  echo "$PREFIX $MSG:  $nerrors. Can't continue! $PREFIX "
+  exit 2
+else 
+  echo "$PREFIX No PMD violations! $PREFIX"
+fi
+
