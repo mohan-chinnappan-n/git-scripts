@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Script for pipeline
+# mchinnappan
+# -----------------------------------------
+# if you are running manually: run this when you are one folder above the classes folder of your sfdx project 
+
+# alias for git, setup:
+# git config --global alias.pmd-cpd '!/Users/mchinnappan/git-scripts/git-cpd'
+## then you can run 
+# git cpd 
+
+#----- configure the following to meet your needs ----
+CODE=${1:-./classes}
+MAXTOKENS=${2:-100}
+FORMAT=${3:-xml}
+LANG=${4:-apex}
+
+#------------------------------------
+PREFIX="==="
+# Run the cpd
+export PMD_JAVA_OPTS=-Xmx512m
+#echo pmd-run.sh cpd  --minimum-tokens ${MAXTOKENS} --files ${CODE} --language ${LANG} --format ${FORMAT}
+pmd-run.sh cpd  --minimum-tokens ${MAXTOKENS} --files ${CODE} --language ${LANG} --format ${FORMAT}
+
+
+
